@@ -1,0 +1,88 @@
+services:
+  gateway:
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
+    ports:
+      - "${BIND_IP:-0.0.0.0}:${HTTP_PORT:-8080}:80"
+      - "${BIND_IP:-0.0.0.0}:${HTTPS_PORT:-8443}:443"
+    depends_on:
+      - landing
+      - frontend
+      - api-usuarios
+      - api-gestion
+      - api-recoleccion
+    networks:
+      - publica
+    restart: unless-stopped
+
+  landing:
+    build: ./landing
+    networks:
+      - publica
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    networks:
+      - publica
+    restart: unless-stopped
+
+  api-usuarios:
+    build: ./api-usuarios
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - publica
+      - privada
+    restart: unless-stopped
+
+  api-gestion:
+    build: ./api-gestion
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - publica
+      - privada
+    restart: unless-stopped
+
+  api-recoleccion:
+    build: ./api-recoleccion
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - publica
+      - privada
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/database.sql:/docker-entrypoint-initdb.d/database.sql:ro,z
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p$$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - privada
+    restart: unless-stopped
+
+networks:
+  publica:
+  privada:
+
+volumes:
+  mysql_data:

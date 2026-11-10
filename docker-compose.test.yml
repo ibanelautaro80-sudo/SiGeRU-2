@@ -1,0 +1,62 @@
+services:
+
+  db-test:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -ptest"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  test-usuarios:
+    build:
+      context: ./api-usuarios
+      dockerfile: Dockerfile.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    environment: &entorno-test
+      DB_HOST: db-test
+      MYSQL_USER: root
+      MYSQL_PASSWORD: test
+      JWT_SECRET: clave-solo-para-tests-0123456789-abcdefghij
+      SCHEMA_SQL: /database/database.sql
+      MYSQL_DATABASE: proyecto_test_usuarios
+    volumes:
+      - ./database/database.sql:/database/database.sql:ro,z
+      - ./api-usuarios/src:/app/src:z
+      - ./api-usuarios/tests:/app/tests:z
+
+  test-gestion:
+    build:
+      context: ./api-gestion
+      dockerfile: Dockerfile.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    environment:
+      <<: *entorno-test
+      MYSQL_DATABASE: proyecto_test_gestion
+    volumes:
+      - ./database/database.sql:/database/database.sql:ro,z
+      - ./api-gestion/src:/app/src:z
+      - ./api-gestion/tests:/app/tests:z
+
+  test-recoleccion:
+    build:
+      context: ./api-recoleccion
+      dockerfile: Dockerfile.test
+    depends_on:
+      db-test:
+        condition: service_healthy
+    environment:
+      <<: *entorno-test
+      MYSQL_DATABASE: proyecto_test_recoleccion
+    volumes:
+      - ./database/database.sql:/database/database.sql:ro,z
+      - ./api-recoleccion/src:/app/src:z
+      - ./api-recoleccion/tests:/app/tests:z

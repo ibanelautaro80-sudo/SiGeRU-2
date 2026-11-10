@@ -1,0 +1,17 @@
+# Desarrollo: monta el codigo local. El sufijo :z es necesario con SELinux (RHEL/Fedora/CentOS/Rocky/Alma).
+services:
+  landing:
+    volumes:
+      - ./landing/site:/usr/share/nginx/html:ro,z
+  frontend:
+    volumes:
+      - ./frontend/site:/usr/share/nginx/html:ro,z
+  api-usuarios:
+    volumes:
+      - ./api-usuarios:/var/www/html:z
+  api-gestion:
+    volumes:
+      - ./api-gestion:/var/www/html:z
+  api-recoleccion:
+    volumes:
+      - ./api-recoleccion:/var/www/html:z
